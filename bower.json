@@ -1,0 +1,19 @@
+{
+  "name": "datetime",
+  "description": "",
+  "main": "",
+  "authors": [
+    "pavelsof"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "tests"
+  ],
+  "devDependencies": {
+    "qunit": "^1.22.0"
+  }
+}

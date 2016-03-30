@@ -1,0 +1,11 @@
+{
+  "name": "datetime",
+  "version": "0.0.0",
+  "description": "",
+  "author": "pavelsof",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-uglify": "^1.5.3"
+  }
+}
