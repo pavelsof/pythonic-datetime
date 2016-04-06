@@ -30,6 +30,14 @@ QUnit.test('fromtimestamp', function(assert) {
 	assert.equal(d.day, 24);
 });
 
+QUnit.test('replace', function(assert) {
+	var d = datetime.date(2016, 4, 1);
+	var res = d.replace(2000);
+	assert.equal(res.year, 2000);
+	assert.equal(res.month, 4);
+	assert.equal(res.day, 1);
+});
+
 QUnit.test('weekday', function(assert) {
 	var d = datetime.date(2016, 3, 24);
 	assert.equal(d.weekday(), 3);
@@ -61,10 +69,29 @@ QUnit.test('compare', function(assert) {
 
 QUnit.test('add', function(assert) {
 	var d = datetime.date(2016, 3, 30);
+	var res = d.add(datetime.timedelta({days: 2}));
+	assert.equal(res.year, 2016);
+	assert.equal(res.month, 4);
+	assert.equal(res.day, 1);
+	
+	d = datetime.date(2016, 3, 23);
+	res = d.add(datetime.timedelta({hours: 24}));
+	assert.equal(res.year, 2016);
+	assert.equal(res.month, 3);
+	assert.equal(res.day, 24);
+	
 	assert.raises(function() { d.add(0); }, TypeError);
 });
 
 QUnit.test('subtract', function(assert) {
-	var d = datetime.date(2016, 3, 30);
+	var d = datetime.date(2016, 4, 1);
+	var res = d.subtract(datetime.timedelta({days: 2, hours: 23}));
+	assert.equal(res.year, 2016);
+	assert.equal(res.month, 3);
+	assert.equal(res.day, 30);
+	
+	res = d.subtract(res);
+	assert.equal(res.total_seconds(), 2*24*3600);
+	
 	assert.raises(function() { d.subtract(0); }, TypeError);
 });

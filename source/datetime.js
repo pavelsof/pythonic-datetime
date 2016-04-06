@@ -4,13 +4,8 @@ var datetime = (function() {
 	
 	
 	/**
-	 * I. utils
+	 * I. utils (type checking and casting)
 	 */
-	var pad = function(number) {
-		if(number < 10) return '0' + number.toString();
-		else return number.toString();
-	};
-	
 	var isInt = function(thing) {
 		return !isNaN(parseInt(thing));
 	};
@@ -27,6 +22,57 @@ var datetime = (function() {
 	var toFloat = function(thing) {
 		if(!isFloat(thing)) throw new TypeError();
 		return parseFloat(thing);
+	};
+	
+	var hasProperties = function(object, properties) {
+		for(var i = 0; i < properties.length; i++) {
+			if(!object.hasOwnProperty(properties[i])) return false;
+		}
+		return true;
+	};
+	
+	var isTimedelta = function(thing) {
+		return hasProperties(thing, ['days', 'seconds', 'milliseconds']);
+	};
+	
+	var isDate = function(thing) {
+		return hasProperties(thing, ['year', 'month', 'day']);
+	};
+	
+	var isDatetime = function(thing) {
+		return hasProperties(thing, [
+			'year', 'month', 'day', 'hour', 'minute',
+			'second', 'millisecond', 'tzinfo'
+		]);
+	};
+	
+	var isTime = function(thing) {
+		return hasProperties(thing, ['hour', 'minute', 'second', 'millisecond']);
+	};
+	
+	var isTimezone = function(thing) {
+		return hasProperties(thing, ['offset']);
+	};
+	
+	
+	/**
+	 * II. utils (helpful building blocks)
+	 */
+	var pad = function(number, length) {
+		if(!length) length = 2;
+		var padding = '', i;
+		for(i = 1; i < length; i++) {
+			if(number < Math.pow(10, i)) padding += '0';
+		}
+		return padding + number.toString();
+	};
+	
+	var arrToObj = function(arr, keys) {
+		var obj = {}, i;
+		for(i = 0; i < arr.length; i++) {
+			obj[keys[i]] = arr[i];
+		}
+		return obj;
 	};
 	
 	var objToArr = function(object, keys) {
@@ -48,8 +94,8 @@ var datetime = (function() {
 		for(i = 0; i < format.length; i++) {
 			if(flag) {
 				if(format[i] == '%') string += '%';
-				else if(directives.hasOwnProperty(format[i])) {
-					string += directives[format[i]](datetime);
+				else if(printDirectives.hasOwnProperty(format[i])) {
+					string += printDirectives[format[i]](datetime);
 				}
 				flag = false;
 			}
@@ -66,40 +112,32 @@ var datetime = (function() {
 		else return object;
 	};
 	
+	var replace = function(cls, instance, props, args) {
+		if(args.length == 0) throw new TypeError();
+		
+		var obj = args[0];
+		if(args.length > 1 || isInt(args[0])) {
+			obj = arrToObj(args, props);
+		}
+		
+		for(var i = 0; i < props.length; i++) {
+			if(props[i] in obj) continue;
+			obj[props[i]] = instance[props[i]];
+		}
+		
+		return cls.init(obj);
+	};
+	
 	var compare = function(left, right) {
 		if(left < right) return -1;
 		if(left > right) return 1;
 		return 0;
 	};
 	
-	var hasProperties = function(object, properties) {
-		for(var i = 0; i < properties.length; i++) {
-			if(!object.hasOwnProperty(properties[i])) return false;
-		}
-		return true;
-	};
-	
-	var isTimedelta = function(thing) {
-		return hasProperties(thing, ['days', 'seconds', 'milliseconds']);
-	};
-	
-	var isDate = function(thing) {
-		return hasProperties(thing, ['year', 'month', 'day']);
-	};
-	
-	var isTime = function(thing) {
-		return hasProperties(thing, ['hour', 'minute', 'second', 'millisecond']);
-	};
-	
-	var isTimezone = function(thing) {
-		return hasProperties(thing, ['offset']);
-	};
-	
 	
 	/**
-	 * II. classes
-	 */
-	/**
+	 * III. timedelta
+	 * 
 	 * @class
 	 */
 	var timedelta = function() {
@@ -196,6 +234,8 @@ var datetime = (function() {
 	
 	
 	/**
+	 * IV. date
+	 * 
 	 * @class
 	 */
 	var date = function() {
@@ -222,26 +262,28 @@ var datetime = (function() {
 	};
 	
 	date.init.today = function() {
-		var jsD = new Date();
-		var d = new date();
-		d.year = jsD.getFullYear();
-		d.month = jsD.getMonth() + 1;
-		d.day = jsD.getDate();
-		return freeze(d);
+		var d = new Date();
+		return date.init(
+			d.getFullYear(), d.getMonth()+1, d.getDate()
+		);
 	};
 	
 	date.init.fromtimestamp = function(timestamp) {
-		var jsD = new Date(timestamp * 1000);
-		var d = new date();
-		d.year = jsD.getFullYear();
-		d.month = jsD.getMonth() + 1;
-		d.day = jsD.getDate();
-		return freeze(d);
+		var d = new Date(timestamp * 1000);
+		return date.init(
+			d.getFullYear(), d.getMonth()+1, d.getDate()
+		);
 	};
 	
 	/**
 	 * instance methods
 	 */
+	date.prototype.replace = function() {
+		return replace(date, this, [
+			'year', 'month', 'day'
+		], arguments);
+	};
+	
 	date.prototype.weekday = function() {
 		var d = new Date(this.year, this.month-1, this.day).getDay();
 		if(d == 0) return 6;
@@ -279,20 +321,31 @@ var datetime = (function() {
 	
 	date.prototype.add = function(delta) {
 		if(!isTimedelta(delta)) throw new TypeError();
+		var dt = datetime.init.combine(this, time.init(12, 0));
+		delta = timedelta.init({days: delta.days});
+		return date.init.fromtimestamp(dt.add(delta).timestamp());
 	};
 	
 	date.prototype.subtract = function(thing) {
+		var dt = datetime.init.combine(this, time.init(12, 0));
+		
 		if(isTimedelta(thing)) {
-			
+			var delta = timedelta.init({days: thing.days});
+			return date.init.fromtimestamp(dt.subtract(delta).timestamp());
 		}
 		else if(isDate(thing)) {
-			
+			var dt2 = datetime.init.combine(thing, time.init(12, 0));
+			return timedelta.init({
+				seconds: dt.timestamp() - dt2.timestamp()
+			});
 		}
 		else throw new TypeError();
 	};
 	
 	
 	/**
+	 * V. datetime
+	 * 
 	 * @class
 	 */
 	var datetime = function() {
@@ -335,11 +388,19 @@ var datetime = (function() {
 		dt._time = time.init(
 			dt.hour, dt.minute, dt.second, dt.millisecond, dt.tzinfo
 		);
-		dt._timestamp = Date.UTC(
-			dt.year, dt.month-1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond
-		);
+		
 		if(dt.tzinfo) {
-			dt._timestamp += dt.tzinfo.utcoffset().total_seconds();
+			dt._timestamp = Date.UTC(
+				dt.year, dt.month-1, dt.day, dt.hour,
+				dt.minute, dt.second, dt.millisecond
+			) / 1000;
+			dt._timestamp -= dt.tzinfo.utcoffset().total_seconds();
+		}
+		else {
+			dt._timestamp  = new Date(
+				dt.year, dt.month-1, dt.day, dt.hour,
+				dt.minute, dt.second, dt.millisecond
+			) / 1000;
 		}
 		
 		return freeze(dt);
@@ -428,6 +489,37 @@ var datetime = (function() {
 		return freeze(dt);
 	};
 	
+	datetime.init.combine = function(d, t) {
+		if(!isDate(d)) throw new TypeError();
+		if(!isTime(t)) throw new TypeError();
+		return datetime.init(
+			d.year, d.month, d.day,
+			t.hour, t.minute, t.second, t.millisecond, t.tzinfo
+		);
+	};
+	
+	datetime.init.strptime = function(dateString, format) {
+		var obj = {}, i, flag, res;
+		for(i = 0; i < format.length; i++) {
+			if(flag) {
+				if(scanDirectives.hasOwnProperty(format[i])) {
+					res = scanDirectives[format[i]](dateString);
+					obj[res[0]] = res[1];
+					dateString = res[2];
+				}
+				else if(format[i] == '%') {
+					dateString = dateString.substring(1);
+				}
+				flag = false;
+			}
+			else {
+				if(format[i] == '%') flag = true;
+				else dateString = dateString.substring(1);
+			}
+		}
+		return datetime.init(obj);
+	};
+	
 	/**
 	 * instance methods
 	 */
@@ -441,6 +533,13 @@ var datetime = (function() {
 	
 	datetime.prototype.timetz = function() {
 		return this._time;
+	};
+	
+	datetime.prototype.replace = function() {
+		return replace(datetime, this, [
+			'year', 'month', 'day', 'hour', 'minute',
+			'second', 'millisecond', 'tzinfo'
+		], arguments);
 	};
 	
 	datetime.prototype.tzname = function() {
@@ -473,8 +572,40 @@ var datetime = (function() {
 		return strftime(this, format);
 	};
 	
+	datetime.prototype.compare = function(another) {
+		if(!isDatetime(another)) throw new TypeError();
+		if((this.tzinfo && !another.tzinfo) || (!this.tzinfo && another.tzinfo))
+			throw new TypeError();
+		return compare(this._timestamp, another.timestamp());
+	};
+	
+	datetime.prototype.add = function(delta) {
+		if(!isTimedelta(delta)) throw new TypeError();
+		return datetime.init.fromtimestamp(
+			this._timestamp + delta.total_seconds(),
+			this.tzinfo
+		);
+	};
+	
+	datetime.prototype.subtract = function(thing) {
+		if(isTimedelta(thing)) {
+			return datetime.init.fromtimestamp(
+				this._timestamp - thing.total_seconds(),
+				this.tzinfo
+			);
+		}
+		else if(isDatetime(thing)) {
+			return timedelta.init({
+				seconds: this._timestamp - thing.timestamp()
+			});
+		}
+		else throw new TypeError();
+	};
+	
 	
 	/**
+	 * VI. time
+	 * 
 	 * @class
 	 */
 	var time = function() {
@@ -508,10 +639,16 @@ var datetime = (function() {
 	/**
 	 * instance methods
 	 */
+	time.prototype.replace = function() {
+		return replace(time, this, [
+			'hour', 'minute', 'second', 'millisecond', 'tzinfo'
+		], arguments);
+	};
+	
 	time.prototype.isoformat = function() {
 		var string = pad(this.hour) +':'+ pad(this.minute) +':'+ pad(this.second);
 		if(this.millisecond) {
-			string += '.'+ this.millisecond;
+			string += '.'+ pad(this.millisecond, 3);
 		}
 		if(this.tzinfo) {
 			string += this.tzinfo.tzname().substring(3);
@@ -544,6 +681,8 @@ var datetime = (function() {
 	
 	
 	/**
+	 * VII. tzinfo
+	 * 
 	 * @class
 	 */
 	var tzinfo = function() {
@@ -552,6 +691,8 @@ var datetime = (function() {
 	
 	
 	/**
+	 * VIII. timezone
+	 * 
 	 * @class
 	 */
 	var timezone = function() {
@@ -604,14 +745,18 @@ var datetime = (function() {
 	
 	
 	/**
-	 * III. format directives
+	 * IX. format directives
 	 */
-	var directives = {
+	var printDirectives = {
 		a: function(d) {
-			
+			return printDirectives.A(d).substring(0, 3);
 		},
 		A: function(d) {
-			
+			if(d.isoweekday) return [
+				'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+				'Friday', 'Saturday', 'Sunday'
+			][d.isoweekday()-1];
+			return '';
 		},
 		w: function(d) {
 			if(d.weekday) return pad(d.weekday()); return '00';
@@ -620,10 +765,14 @@ var datetime = (function() {
 			if(d.day) return pad(d.day); return '00';
 		},
 		b: function(d) {
-			
+			return printDirectives.B(d).substring(0, 3);
 		},
 		B: function(d) {
-			
+			if(d.month) return [
+				'January', 'February', 'March', 'April', 'May', 'June',
+				'July', 'August', 'September', 'October', 'November', 'December'
+			][d.month-1];
+			return '';
 		},
 		m: function(d) {
 			if(d.month) return pad(d.month); return '00';
@@ -638,10 +787,10 @@ var datetime = (function() {
 			if(d.hour) return pad(d.hour); return '00';
 		},
 		I: function(d) {
-			
+			if('hour' in d) return pad(d.hour % 12 || 12); return '00';
 		},
 		p: function(d) {
-			
+			if('hour' in d) return (d.hour < 12) ? 'AM' : 'PM'; return '';
 		},
 		M: function(d) {
 			if(d.minute) return pad(d.minute); return '00';
@@ -650,37 +799,78 @@ var datetime = (function() {
 			if(d.second) return pad(d.second); return '00';
 		},
 		f: function(d) {
-			
+			if(d.millisecond) return pad(d.millisecond, 3); return '000';
 		},
 		z: function(d) {
-			
+			var name = d.tzname(); if(!name) return '';
+			if(name == 'UTC') return '+0000';
+			return name.substring(3, 6) + name.substring(7);
 		},
 		Z: function(d) {
 			if(d.tzname) return d.tzname(); return '';
 		},
 		j: function(d) {
-			
+			return '';
 		},
 		U: function(d) {
-			
+			return '';
 		},
 		W: function(d) {
-			
+			return '';
 		},
 		c: function(d) {
-			
+			if(!d.year || !d.month || !d.day) return '';
+			if(isDate(d)) d = datetime.init.combine(d, time.init());
+			return new Date(
+				d.year, d.month-1, d.day, d.hour,
+				d.minute, d.second, d.millisecond
+			).toLocaleString();
 		},
 		x: function(d) {
-			
+			if(!d.year || !d.month || !d.day) return '';
+			return new Date(
+				d.year, d.month-1, d.day
+			).toLocaleDateString();
 		},
 		X: function(d) {
-			
+			if(isTime(d)) d = datetime.init.combine(date.init.today(), d);
+			return new Date(
+				d.year, d.month-1, d.day, d.hour,
+				d.minute, d.second, d.millisecond
+			).toLocaleTimeString();
+		}
+	};
+	
+	/**
+	 * Scan directives return [property, value, restOfString].
+	 */
+	var scanDirectives = {
+		d: function(s) {
+			return ['day', toInt(s.substring(0, 2)), s.substring(2)];
+		},
+		m: function(s) {
+			return ['month', toInt(s.substring(0, 2)), s.substring(2)];
+		},
+		Y: function(s) {
+			return ['year', toInt(s.substring(0, 4)), s.substring(4)];
+		},
+		H: function(s) {
+			return ['hour', toInt(s.substring(0, 2)), s.substring(2)];
+		},
+		M: function(s) {
+			return ['minute', toInt(s.substring(0, 2)), s.substring(2)];
+		},
+		S: function(s) {
+			return ['second', toInt(s.substring(0, 2)), s.substring(2)];
+		},
+		f: function(s) {
+			return ['millisecond', toInt(s.substring(0, 3)), s.substring(3)];
 		}
 	};
 	
 	
 	/**
-	 * IV. exports
+	 * X. exports
 	 */
 	return {
 		timedelta: timedelta.init,

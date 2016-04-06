@@ -30,6 +30,23 @@ QUnit.test('init (object)', function(assert) {
 	assert.equal(t.millisecond, 0);
 });
 
+QUnit.test('replace', function(assert) {
+	var t = datetime.time(15, 27, 42, 500, datetime.timezone.utc);
+	var res = t.replace(16);
+	assert.equal(res.hour, 16);
+	assert.equal(res.minute, 27);
+	assert.equal(res.second, 42);
+	assert.equal(res.millisecond, 500);
+	assert.equal(res.tzname(), 'UTC');
+	
+	res = t.replace({tzinfo: datetime.timezone(datetime.timedelta({minutes: 120}))});
+	assert.equal(res.hour, 15);
+	assert.equal(res.minute, 27);
+	assert.equal(res.second, 42);
+	assert.equal(res.millisecond, 500);
+	assert.equal(res.tzname(), 'UTC+02:00');
+});
+
 QUnit.test('isoformat', function(assert) {
 	var t = datetime.time(14, 26, 55);
 	assert.equal(t.isoformat(), '14:26:55');
@@ -43,8 +60,12 @@ QUnit.test('isoformat', function(assert) {
 });
 
 QUnit.test('strftime', function(assert) {
-	var t = datetime.time(12, 12, 30);
-	assert.equal(t.strftime('%H:%M:%S'), '12:12:30');
+	assert.equal(datetime.time(12, 12, 30).strftime('%H:%M:%S'), '12:12:30');
+	
+	assert.equal(datetime.time(0).strftime('%I %p'), '12 AM');
+	assert.equal(datetime.time(1).strftime('%I %p'), '01 AM');
+	assert.equal(datetime.time(12).strftime('%I %p'), '12 PM');
+	assert.equal(datetime.time(23).strftime('%I %p'), '11 PM');
 });
 
 QUnit.test('compare', function(assert) {
