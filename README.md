@@ -40,25 +40,25 @@ submodule; the master branch will always contain the latest stable.
   see microseconds in Python's datetime API, replace it with milliseconds.
 * As there is no operator overloading in JavaScript, the following methods are
   used for datetime arithmetics:
-	* delta.compare(another): returns one of -1, 0, 1
-	* delta.add(addend)
-	* delta.subtract(subtrahend)
-	* delta.multiply(factor)
-	* delta.divide(divisor)
-* If wrong arguments are provided, TypeError is raised. However, argument
-  validation is yet to be implemented.
+	* `delta.compare(another)`: returns one of -1, 0, 1
+	* `delta.add(addend)`
+	* `delta.subtract(subtrahend)`
+	* `delta.multiply(factor)`
+	* `delta.divide(divisor)`
+* If wrong arguments are provided, TypeError is raised. However, comprehensive
+  argument validation is yet to be implemented.
 * No tzinfo, only timezone. This is more of a status-quo.
 * Other functions/methods which are not (yet?) implemented: `ctime`,
   `fromordinal`, `timetuple`, `toordinal`.
 * The following printf directives are currently not implemented: `%j`, `%U`, and
-  `%W`. Also, `%a`, `%A`, `%b`, `%B`, and `%p` are not localised.
-* Of the scanf directives, only the `%d`, `%m`, `%Y`, `%H`, `%M`, `%S`, and `%f`
-  are implemented.
+  `%W`. However, `%a`, `%A`, `%b`, `%B`, and `%p` are not localised.
+* Of the scanf directives, only `%d`, `%m`, `%Y`, `%H`, `%M`, `%S`, and `%f` are
+  implemented.
 
 
 ## TODO/Roadmap
 
-* To implement the proleptic Gregorian ordinals: toordinal, fromordinal
+* To implement the proleptic Gregorian ordinals: `toordinal`, `fromordinal`.
 * To validate the constructor arguments.
 * To test, document, and improve datetime's interoperability with at least one
   of the JavaScript libraries that are synced with the Olson database. In other

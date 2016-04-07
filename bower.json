@@ -1,12 +1,12 @@
 {
-  "name": "datetime",
-  "description": "",
-  "main": "",
+  "name": "pythonic-datetime",
+  "description": "Pythonic dates, times, and deltas in JavaScript",
+  "keywords": ["pythonic", "datetime", "date", "time", "timedelta"],
+  "main": "source/datetime.js",
   "authors": [
-    "pavelsof"
+    {"name": "pavelsof", "homepage": ""}
   ],
   "license": "MIT",
-  "homepage": "",
   "ignore": [
     "**/.*",
     "node_modules",
