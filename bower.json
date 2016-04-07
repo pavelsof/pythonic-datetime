@@ -4,7 +4,7 @@
   "keywords": ["pythonic", "datetime", "date", "time", "timedelta"],
   "main": "source/datetime.js",
   "authors": [
-    {"name": "pavelsof", "homepage": ""}
+    {"name": "pavelsof", "homepage": "http://pavelsof.com/"}
   ],
   "license": "MIT",
   "ignore": [

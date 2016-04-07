@@ -2,11 +2,12 @@
 
 Pythonic dates, times, and deltas in JavaScript. Advantages:
 
-* The same API as Python's datetime module (see below for the differences).
+* The same API as Python's datetime module (see below for differences).
 * Clear distinction between naive and aware datetimes.
 * All functions/methods return immutable (ok, frozen) objects.
 * Timedelta arithmetics.
 * Unix timestamps (i.e. seconds instead of milliseconds).
+* Lightweight (~3KB gzipped).
 
 This is not a re-write of Python's datetime module in JavaScript; instead, it
 leverages the native Date functions wherever possible. In fact, you can think
