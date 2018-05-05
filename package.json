@@ -1,9 +1,25 @@
 {
-  "name": "datetime",
+  "name": "pythonic-datetime",
   "version": "0.0.0",
-  "description": "",
-  "author": "pavelsof",
+  "description": "Pythonic dates, times, and deltas in JavaScript",
+  "keywords": [
+    "pythonic",
+    "datetime",
+    "date",
+    "time",
+    "timedelta"
+  ],
   "license": "MIT",
+  "author": {
+    "name": "pavelsof",
+    "email": "pavelsof@gmail.com",
+    "url": "https://pavelsof.com/"
+  },
+  "files": [
+    "source/*",
+    "build/*",
+    "tests/*"
+  ],
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-uglify": "^1.5.3"

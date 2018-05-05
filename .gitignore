@@ -1,4 +1,5 @@
-develop/*
+meta/*
+
 bower_components/*
 node_modules/*
 

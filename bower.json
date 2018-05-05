@@ -4,14 +4,13 @@
   "keywords": ["pythonic", "datetime", "date", "time", "timedelta"],
   "main": "source/datetime.js",
   "authors": [
-    {"name": "pavelsof", "homepage": "http://pavelsof.com/"}
+    {"name": "pavelsof", "email": "pavelsof@gmail.com", "homepage": "https://pavelsof.com/"}
   ],
   "license": "MIT",
   "ignore": [
     "**/.*",
-    "node_modules",
     "bower_components",
-    "tests"
+    "node_modules"
   ],
   "devDependencies": {
     "qunit": "^1.22.0"
